@@ -1,6 +1,5 @@
 # 技术演示台 · TechDemoStudio
 
-[![build](https://github.com/OWNER/REPO/actions/workflows/build.yml/badge.svg)](https://github.com/OWNER/REPO/actions/workflows/build.yml)
 [![release](https://img.shields.io/github/v/release/OWNER/REPO?label=release)](https://github.com/OWNER/REPO/releases)
 [![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 ![platform](https://img.shields.io/badge/platform-Windows%207%20SP1%2B-0078D6)
