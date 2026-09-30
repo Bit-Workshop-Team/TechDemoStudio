@@ -1,0 +1,168 @@
+name: build
+
+# 触发方式：
+#   - 推送到 main / 向 main 发 PR：跑逻辑自检 + 构建安装包
+#   - 打 v* 标签：额外跑端到端冒烟，并把安装包附到 GitHub Release
+#   - 手动触发：可自由选择是否只跑测试
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# 同一分支只保留最新一次运行，避免排队堆积
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  # electron-builder 在 CI 里不需要发布到任何商店，产物交给 artifact / Release
+  CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+
+jobs:
+  test:
+    name: 逻辑自检 (node tools/self-test.js)
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: 安装依赖
+        run: npm ci
+
+      - name: 规则 / 提示词 / 配置 / 暗码 自检
+        run: npm test
+
+  build:
+    name: 构建 Windows 安装包 (NSIS)
+    needs: test
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: 缓存 Electron / electron-builder 二进制
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~\AppData\Local\electron\Cache
+            ~\AppData\Local\electron-builder\Cache
+          key: electron-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: 安装依赖
+        run: npm ci
+
+      - name: 生成应用图标（build/icon*.png 与 icon.ico 不入库）
+        run: npm run icon
+
+      - name: 构建 x64 + ia32 安装包
+        run: npm run dist
+
+      - name: 列出版本信息与产物
+        run: |
+          node -p "'electron=' + require('electron/package.json').version"
+          Get-ChildItem dist\*.exe | Select-Object Name, @{n='MB';e={[math]::Round($_.Length/1MB,1)}}
+
+      - name: 上传安装包
+        uses: actions/upload-artifact@v4
+        with:
+          name: TechDemoStudio-installers
+          if-no-files-found: error
+          retention-days: 14
+          path: |
+            dist/TechDemoStudio-*-setup.exe
+            dist/*.blockmap
+
+      - name: 上传免安装目录内容（便于排查，不含 Electron 运行时）
+        uses: actions/upload-artifact@v4
+        with:
+          name: TechDemoStudio-win-unpacked-app
+          if-no-files-found: warn
+          retention-days: 7
+          path: |
+            dist/win-unpacked/TechDemoStudio.exe
+            dist/win-unpacked/resources/app.asar
+            dist/win-unpacked/resources/app.asar.unpacked/**
+
+  # 端到端冒烟需要真实窗口（Electron 起 GUI），只手动触发和打标签时跑，避免日常 PR 被环境抖动拖红
+  e2e:
+    name: 端到端冒烟 (真实 Electron + Kiosk + 暗码退出)
+    needs: test
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: 安装依赖
+        run: npm ci
+
+      - name: 生成图标
+        run: npm run icon
+
+      - name: 源码端到端
+        run: npm run test:e2e:sandboxed
+
+      - name: 上传冒烟结果与截图
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-evidence
+          if-no-files-found: warn
+          retention-days: 14
+          path: |
+            smoke-result.json
+            smoke-trace.log
+            shots/
+
+  release:
+    name: 发布 GitHub Release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write        # 创建 Release 需要写权限
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: TechDemoStudio-installers
+          path: installers
+
+      - name: 生成校验和
+        shell: bash
+        run: |
+          cd installers
+          ls -l
+          sha256sum ./*.exe > SHA256SUMS.txt || true
+          cat SHA256SUMS.txt
+
+      - name: 创建 Release 并附加安装包
+        uses: softprops/action-gh-release@v2
+        with:
+          name: 技术演示台 ${{ github.ref_name }}
+          draft: true
+          generate_release_notes: true
+          files: |
+            installers/*.exe
+            installers/SHA256SUMS.txt

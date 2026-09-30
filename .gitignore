@@ -1,0 +1,85 @@
+# ---------------------------------------------------------------- 依赖与构建产物
+node_modules/
+dist/
+out/
+release/
+*.tsbuildinfo
+
+# 图标由 `npm run icon` 生成（tools/make-icon.js），不入库
+build/icon.ico
+build/icon.png
+build/icon-256.png
+
+# NSIS / electron-builder 中间产物
+*.blockmap
+dist/*.yml
+dist/*.yaml
+__uninstaller.exe
+.erb/
+
+# ---------------------------------------------------------------- 测试与运行产物
+# 端到端冒烟测试的输出与截图（CI 里作为 artifact 上传，本地可随时重建）
+e2e-out.txt
+asar-e2e-out.txt
+*-smoke-out.txt
+smoke-result.json
+smoke-trace.log
+shots/
+# 只忽略运行期临时截图目录；docs/screenshots/ 是 README 使用的正式配图，必须入库
+/screenshots/
+
+# 沙箱 / 冒烟运行用的独立 Electron 用户目录：
+# 内含 Chromium 配置、缓存，以及 config.json（加密后的 API Key 密文），绝不入库
+.edata/
+.smoke-profile/
+**/user-data-dir/
+**/Cache/
+**/Code Cache/
+**/GPUCache/
+**/DawnCache/
+**/blob_storage/
+**/Local Storage/
+**/Session Storage/
+**/Network/
+
+# ---------------------------------------------------------------- 密钥与个人数据
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.keystore
+secrets.json
+credentials.json
+config.local.json
+# 真实配置文件位置：%APPDATA%\TechDemoStudio\config.json（永远不放进仓库）
+config.json
+api-key*.txt
+
+# ---------------------------------------------------------------- 编辑器 / 操作系统
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# ---------------------------------------------------------------- 日志与崩溃报告
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+crash*.dmp
+*.dmp

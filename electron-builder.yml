@@ -1,0 +1,42 @@
+appId: com.demosoftware.techdemostudio
+productName: TechDemoStudio
+copyright: Copyright © 2026 Demo Software
+
+directories:
+  output: dist
+  buildResources: build
+
+files:
+  - src/**/*
+  - package.json
+  - "!**/*.map"
+  - "!**/.DS_Store"
+
+asar: true
+compression: normal
+buildDependenciesFromSource: false
+npmRebuild: false
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+        - ia32
+  icon: build/icon.png
+  artifactName: TechDemoStudio-${version}-${arch}-setup.${ext}
+  requestedExecutionLevel: asInvoker
+  legalTrademarks: ""
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowElevation: true
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: 技术演示台
+  runAfterFinish: true
+  deleteAppDataOnUninstall: false
+  uninstallDisplayName: 技术演示台 ${version}
+  include: build/installer.nsh

@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!--
+    内容安全策略：本应用完全离线，界面不加载任何远端资源。
+    - script-src 'self'：只允许本地脚本（禁用内联脚本与 eval）
+    - connect-src 'none'：渲染进程不允许发起网络请求（所有模型请求都在主进程完成）
+    - style-src 'self' 'unsafe-inline'：样式表来自 styles.css，另有少量内联 style 属性
+  -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'none'; media-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'">
+  <title>技术演示台</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app">
+
+    <!-- ================= 设置界面 ================= -->
+    <section id="view-settings" class="view active">
+      <header class="app-header">
+        <div class="brand">
+          <div class="logo" id="brand-logo"></div>
+          <div>
+            <h1>技术演示台</h1>
+            <div class="sub">Tech Demo Studio</div>
+          </div>
+        </div>
+        <div class="header-meta" id="header-meta"></div>
+      </header>
+
+      <div class="settings-body">
+        <div class="settings-grid">
+
+          <!-- 左列 -->
+          <div>
+            <div class="panel">
+              <div class="panel-head">
+                <h2>模型服务</h2>
+                <span class="desc">所有网络请求由主进程发出，不受浏览器跨域限制</span>
+              </div>
+              <div class="field">
+                <label for="api-base-url">API 地址（Base URL）</label>
+                <input class="input" id="api-base-url" type="text" spellcheck="false" placeholder="https://api.deepseek.com">
+                <div class="hint">填写到域名/版本前缀即可，程序会自动补 <code>/chat/completions</code> 与 <code>/models</code>。</div>
+              </div>
+              <div class="field">
+                <label for="api-key">API Key</label>
+                <div class="row">
+                  <input class="input grow" id="api-key" type="password" spellcheck="false" autocomplete="off" placeholder="sk-...">
+                  <button class="btn btn-sm" id="btn-toggle-key" type="button">显示</button>
+                </div>
+                <div class="hint" id="key-hint">保存在本机用户配置目录，优先使用系统加密（Windows DPAPI）。</div>
+              </div>
+              <div class="field">
+                <div class="row wrap">
+                  <button class="btn" id="btn-test" type="button">测试连接</button>
+                  <button class="btn btn-ghost" id="btn-models" type="button">拉取模型列表</button>
+                  <span class="result-line" id="test-result"></span>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-head">
+                <h2>对弈双方</h2>
+                <span class="desc">黑先白后，可分别配置引擎与模型</span>
+              </div>
+              <div class="grid-2">
+                <div class="side-card black" id="card-black">
+                  <div class="side-head">
+                    <div class="side-title"><span class="stone-chip black"></span>黑方（先手）</div>
+                    <span class="dot dot-idle" id="black-dot"></span>
+                  </div>
+                  <div class="field">
+                    <label for="black-engine">推理引擎</label>
+                    <select class="select" id="black-engine">
+                      <option value="api">大模型 API</option>
+                      <option value="local">内置本地引擎</option>
+                    </select>
+                  </div>
+                  <div id="black-ai-fields">
+                    <div class="field">
+                      <label for="black-model">模型</label>
+                      <div class="combo" id="black-model-combo">
+                        <input class="input combo-input" id="black-model" type="text" spellcheck="false" autocomplete="off" placeholder="deepseek-flash">
+                        <button class="combo-arrow" id="black-model-arrow" type="button" tabindex="-1" aria-label="选择模型">▾</button>
+                        <div class="combo-menu" id="black-model-menu"></div>
+                      </div>
+                    </div>
+                    <div class="field">
+                      <label for="black-effort">思考档位</label>
+                      <select class="select" id="black-effort">
+                        <option value="off">Off（不思考）</option>
+                        <option value="low">Low（轻量思考）</option>
+                        <option value="high">High（标准）</option>
+                        <option value="max">Max（最强）</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="local-note" id="black-local-note">内置本地引擎为离线启发式算法，无需配置模型与思考档位。</div>
+                  <details class="prompt-editor">
+                    <summary>系统提示词（留空使用内置默认）</summary>
+                    <div class="body">
+                      <textarea class="textarea" id="black-prompt" spellcheck="false" placeholder="留空即使用内置默认提示词"></textarea>
+                      <div class="row" style="margin-top:8px">
+                        <button class="btn btn-sm btn-ghost" id="btn-reset-black-prompt" type="button">填入默认提示词</button>
+                        <button class="btn btn-sm btn-ghost" id="btn-view-black-prompt" type="button">查看默认</button>
+                      </div>
+                    </div>
+                  </details>
+                </div>
+
+                <div class="side-card white" id="card-white">
+                  <div class="side-head">
+                    <div class="side-title"><span class="stone-chip white"></span>白方（后手）</div>
+                    <span class="dot dot-idle" id="white-dot"></span>
+                  </div>
+                  <div class="field">
+                    <label for="white-engine">推理引擎</label>
+                    <select class="select" id="white-engine">
+                      <option value="api">大模型 API</option>
+                      <option value="local">内置本地引擎</option>
+                    </select>
+                  </div>
+                  <div id="white-ai-fields">
+                    <div class="field">
+                      <label for="white-model">模型</label>
+                      <div class="combo" id="white-model-combo">
+                        <input class="input combo-input" id="white-model" type="text" spellcheck="false" autocomplete="off" placeholder="deepseek-flash">
+                        <button class="combo-arrow" id="white-model-arrow" type="button" tabindex="-1" aria-label="选择模型">▾</button>
+                        <div class="combo-menu" id="white-model-menu"></div>
+                      </div>
+                    </div>
+                    <div class="field">
+                      <label for="white-effort">思考档位</label>
+                      <select class="select" id="white-effort">
+                        <option value="off">Off（不思考）</option>
+                        <option value="low">Low（轻量思考）</option>
+                        <option value="high">High（标准）</option>
+                        <option value="max">Max（最强）</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="local-note" id="white-local-note">内置本地引擎为离线启发式算法，无需配置模型与思考档位。</div>
+                  <details class="prompt-editor">
+                    <summary>系统提示词（留空使用内置默认）</summary>
+                    <div class="body">
+                      <textarea class="textarea" id="white-prompt" spellcheck="false" placeholder="留空即使用内置默认提示词"></textarea>
+                      <div class="row" style="margin-top:8px">
+                        <button class="btn btn-sm btn-ghost" id="btn-reset-white-prompt" type="button">填入默认提示词</button>
+                        <button class="btn btn-sm btn-ghost" id="btn-view-white-prompt" type="button">查看默认</button>
+                      </div>
+                    </div>
+                  </details>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-head">
+                <h2>落子与请求</h2>
+                <span class="desc">与参考插件一致的仲裁参数</span>
+              </div>
+              <div class="grid-3">
+                <div class="field">
+                  <label for="move-timeout">单步超时（毫秒）</label>
+                  <input class="input" id="move-timeout" type="number" min="5000" max="3600000" step="1000">
+                </div>
+                <div class="field">
+                  <label for="move-maxtokens">输出上限（token）</label>
+                  <input class="input" id="move-maxtokens" type="number" min="64" max="128000" step="64">
+                </div>
+                <div class="field">
+                  <label for="move-attempts">最大重试次数</label>
+                  <input class="input" id="move-attempts" type="number" min="1" max="6" step="1">
+                </div>
+              </div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-head">
+                <h2>演示模式</h2>
+                <span class="desc">全屏锁定与退出暗码</span>
+              </div>
+              <div class="grid-3">
+                <div class="field">
+                  <label for="demo-exit-code">退出暗码</label>
+                  <input class="input" id="demo-exit-code" type="text" maxlength="16" spellcheck="false">
+                  <div class="hint">在演示画面中依次键入这些字符即可退出全屏。</div>
+                </div>
+                <div class="field">
+                  <label for="demo-step-delay">AI 落子间隔（毫秒）</label>
+                  <input class="input" id="demo-step-delay" type="number" min="0" max="10000" step="100">
+                </div>
+                <div class="field">
+                  <label for="local-level">本地引擎棋力</label>
+                  <select class="select" id="local-level">
+                    <option value="1">1 · 快速</option>
+                    <option value="2">2 · 标准</option>
+                    <option value="3">3 · 较强</option>
+                  </select>
+                </div>
+              </div>
+              <div class="field">
+                <label class="row" style="cursor:pointer">
+                  <input type="checkbox" id="demo-show-hint">
+                  <span>在演示画面角落显示暗码进度提示（正对观众投影时建议关闭）</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="save-bar">
+              <span class="state" id="save-state">尚未修改</span>
+              <div class="row">
+                <button class="btn btn-ghost btn-sm" id="btn-open-config" type="button">配置文件位置</button>
+                <button class="btn btn-ghost btn-sm" id="btn-reset-all" type="button">恢复默认</button>
+                <button class="btn btn-primary" id="btn-save" type="button">保存设置</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 右列 -->
+          <div>
+            <div class="panel">
+              <div class="panel-head">
+                <h2>技术演示板块</h2>
+                <span class="desc">选择板块进入全屏演示</span>
+              </div>
+              <div class="board-list" id="board-list"></div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-head">
+                <h2>使用说明</h2>
+                <span class="desc">演示现场速查</span>
+              </div>
+              <div class="notes" id="notes"></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= 演示模式 ================= -->
+    <section id="view-demo" class="view">
+      <div class="demo-headline">
+        <h1>DeepSeek能否战胜机器？</h1>
+        <div class="headline-sub">DeepSeek 大模型 与 本地启发式引擎 · 五子棋对抗演示</div>
+        <div class="scoreboard" id="demo-score">
+          <span class="score-side" id="score-side-black"><i class="stone black"></i>黑方<b id="score-black">0</b></span>
+          <span class="score-colon">:</span>
+          <span class="score-side" id="score-side-white"><i class="stone white"></i>白方<b id="score-white">0</b></span>
+          <span class="score-draw">和棋 <b id="score-draw">0</b></span>
+        </div>
+      </div>
+      <header class="demo-header">
+        <div class="title">
+          <h1 id="demo-title">AI 五子棋</h1>
+          <span class="tag" id="demo-subtitle">TECH DEMO</span>
+        </div>
+        <div class="status">
+          <span class="last-move-chip" id="demo-last-move">最新落子 --</span>
+          <span id="demo-phase">准备开始</span>
+          <div class="lock-badge" id="lock-badge">
+            <span id="lock-icon"></span>
+            <span id="lock-text">演示锁定</span>
+            <span class="keys" id="lock-keys"></span>
+          </div>
+        </div>
+      </header>
+
+      <div class="demo-body" id="demo-body">
+        <section class="side-panel black-side" id="panel-black">
+          <div class="sp-head">
+            <div class="sp-title">
+              <span class="sp-name"><span class="stone-chip black"></span>黑方</span>
+              <span class="badge badge-gold" id="black-engine-badge">大模型 API</span>
+            </div>
+            <div class="sp-model" id="black-panel-model">--</div>
+            <div class="sp-state"><span class="dot dot-idle" id="black-panel-dot"></span><span id="black-panel-state">待机</span></div>
+          </div>
+          <div class="sp-body"><div class="reasoning empty" id="black-reasoning">等待黑方落子…</div></div>
+          <div class="sp-foot"><span id="black-panel-meta">--</span><span id="black-panel-usage"></span></div>
+        </section>
+
+        <div class="board-area" id="board-area">
+          <div class="board-shell" id="board-shell">
+            <canvas id="gomoku-canvas"></canvas>
+            <div class="board-banner" id="board-banner">
+              <h3 id="banner-title">本局结束</h3>
+              <div class="sub" id="banner-sub"></div>
+        <div class="banner-countdown hidden" id="banner-countdown"></div>
+              <div class="actions">
+                <button class="btn btn-primary btn-sm" id="btn-banner-new" type="button">再来一局</button>
+              </div>
+            </div>
+          </div>
+          <div class="board-hint" id="board-hint">15 × 15 棋盘 · 无禁手 · 五子连珠即胜</div>
+          <button class="btn btn-primary challenge-btn" id="btn-demo-manual" type="button">我要挑战deepseek！</button>
+          <div class="demo-error" id="demo-error">
+            <div id="demo-error-text"></div>
+            <div class="actions" id="demo-error-actions"></div>
+          </div>
+        </div>
+
+        <section class="side-panel white-side" id="panel-white">
+          <div class="sp-head">
+            <div class="sp-title">
+              <span class="sp-name"><span class="stone-chip white"></span>白方</span>
+              <span class="badge badge-gold" id="white-engine-badge">内置本地引擎</span>
+            </div>
+            <div class="sp-model" id="white-panel-model">--</div>
+            <div class="sp-state"><span class="dot dot-idle" id="white-panel-dot"></span><span id="white-panel-state">待机</span></div>
+          </div>
+          <div class="sp-body"><div class="reasoning empty" id="white-reasoning">等待白方落子…</div></div>
+          <div class="sp-foot"><span id="white-panel-meta">--</span><span id="white-panel-usage"></span></div>
+        </section>
+      </div>
+
+      <footer class="demo-footer">
+        <div class="controls">
+          <button class="btn btn-sm" id="btn-demo-pause" type="button">暂停</button>
+          <button class="btn btn-sm" id="btn-demo-restart" type="button">重新开始</button>
+          <button class="btn btn-sm btn-ghost" id="btn-demo-undo" type="button">悔一步</button>
+          <button class="btn btn-sm btn-ghost" id="btn-demo-numbers" type="button">手数标记</button>
+        </div>
+        <div class="speed">
+          <span>节奏</span>
+          <input type="range" id="demo-pace" min="0" max="4000" step="100">
+          <span id="demo-pace-label">--</span>
+        </div>
+        <div class="moves" id="demo-moves"></div>
+      </footer>
+    </section>
+
+    <!-- ================= 占位板块 ================= -->
+    <section id="view-blank" class="view">
+      <div class="demo-headline">
+        <h1>DeepSeek能否战胜机器？</h1>
+        <div class="headline-sub">技术演示台 · 全屏演示模式</div>
+      </div>
+      <div class="placeholder-wrap">
+        <div class="orb"></div>
+        <h2 id="blank-title">板块建设中</h2>
+        <div class="sub" id="blank-sub"></div>
+        <div class="tagline" id="blank-tagline"></div>
+        <div class="lock-badge">
+          <span id="blank-lock-icon"></span>
+          <span>演示已锁定 · 输入退出暗码返回设置</span>
+          <span class="keys" id="blank-lock-keys"></span>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <div id="toast-host"></div>
+
+  <script src="../shared/gomoku-rules.js"></script>
+  <script src="../shared/boards.js"></script>
+  <script src="../shared/default-prompts.js"></script>
+  <script src="lib/ui.js"></script>
+  <script src="lib/gomoku-game.js"></script>
+  <script src="lib/board-renderer.js"></script>
+  <script src="lib/settings.js"></script>
+  <script src="lib/demo.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

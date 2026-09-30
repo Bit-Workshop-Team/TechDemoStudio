@@ -1,0 +1,49 @@
+{
+  "name": "tech-demo-studio",
+  "productName": "TechDemoStudio",
+  "version": "1.0.0",
+  "description": "多技术板块演示软件：启动进入设置界面，配置 API Key，选择板块进入全屏演示模式（首个板块：AI 与 AI 下五子棋）",
+  "main": "src/main/main.js",
+  "author": {
+    "name": "TechDemoStudio contributors"
+  },
+  "license": "MIT",
+  "private": true,
+  "keywords": [
+    "electron",
+    "desktop",
+    "demo",
+    "kiosk",
+    "gomoku",
+    "deepseek",
+    "llm",
+    "windows-7"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/OWNER/REPO.git"
+  },
+  "homepage": "https://github.com/OWNER/REPO#readme",
+  "bugs": {
+    "url": "https://github.com/OWNER/REPO/issues"
+  },
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "icon": "node tools/make-icon.js",
+    "test": "node tools/self-test.js",
+    "test:e2e": "electron tools/smoke-electron.js",
+    "test:e2e:sandboxed": "electron tools/smoke-electron.js --user-data-dir=.smoke-profile --no-sandbox --disable-gpu --disable-crash-reporter",
+    "dist": "npm run icon && electron-builder --win nsis --x64 --ia32",
+    "dist:x64": "npm run icon && electron-builder --win nsis --x64",
+    "dist:ia32": "npm run icon && electron-builder --win nsis --ia32",
+    "pack": "npm run icon && electron-builder --win dir --x64"
+  },
+  "devDependencies": {
+    "electron": "22.3.27",
+    "electron-builder": "26.15.3"
+  }
+}

@@ -1,0 +1,30 @@
+version: 2
+updates:
+  # 依赖更新 PR：默认每周一检查一次
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: 'chore(deps)'
+    labels:
+      - dependencies
+    ignore:
+      # Electron 22 是最后一个支持 Windows 7 的版本线（Chromium 108），
+      # 大版本升级会直接丢掉 Win7 兼容性，必须人工评估后再动。
+      - dependency-name: electron
+        update-types: ['version-update:semver-major']
+    groups:
+      dev-dependencies:
+        patterns: ['*']
+        dependency-type: development
+
+  # GitHub Actions 自身版本更新
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: 'chore(ci)'
