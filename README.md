@@ -1,6 +1,6 @@
 # 技术演示台 · TechDemoStudio
 
-[![release](https://img.shields.io/github/v/release/OWNER/REPO?label=release)](https://github.com/OWNER/REPO/releases)
+[![release](https://img.shields.io/github/v/release/foragedysetour/TechDemoStudio?label=release)](https://github.com/foragedysetour/TechDemoStudio/releases)
 [![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 ![platform](https://img.shields.io/badge/platform-Windows%207%20SP1%2B-0078D6)
 
@@ -67,7 +67,7 @@ npm start          # 或 npm run dev（带开发模式标记）
 6. 想人机对战：点棋盘正下方那颗放大的「**我要挑战deepseek！**」按钮，你会接管正在使用本地引擎的一方
    （若双方都是大模型则接管白方），在棋盘上点交叉点落子；**你落子后 AI 会立刻接着走**，
    AI 走完再自动把回合交回给你（面板显示「等你落子」），再点一次同一按钮即交还引擎；
-7. 退出演示：**连续按 `1` `1` `4` `5` `1` `4`**（界面上有 6 个暗码进度点提示，可在演示里关闭提示）。
+7. 退出演示：**连续按指定暗码退出**（界面上有暗码进度点提示，可在演示里关闭提示）。
    按错一位会立刻重置：暗码徽标变红抖动、文案变成「暗码错误 · 已重置，请重新输入」，并弹一条提示。
    演示界面**故意不提供鼠标退出按钮**，唯一出口就是这串暗码；万一需要强制结束，
    按 `Ctrl+Alt+Del` 打开任务管理器结束进程（这是 Windows 保留的安全注意序列，任何用户态程序都拦不住）。
@@ -94,7 +94,7 @@ npm start          # 或 npm run dev（带开发模式标记）
 | | 单步输出上限 | 8192 tokens | 防止推理模型输出失控 |
 | | 非法回复重试次数 | 3 | 越界 / 占位 / 格式错 / 空回复都会带**针对性纠正提示 + 空点示例**反馈重试 |
 | | 落子节奏 | 600 ms | 演示观感用，可设 0 立即连下 |
-| 演示 | 退出暗码 | `114514` | 演示中连续输入即退出全屏 |
+| 演示 | 退出暗码 | 默认`114514` | 演示中连续输入即退出全屏 |
 | | 显示暗码进度点 | 开 | 关闭后界面不显示进度点，暗码仍然有效 |
 | 本地引擎 | 棋力档位 | 2（1–3） | 内置启发式评分引擎的强度 |
 
