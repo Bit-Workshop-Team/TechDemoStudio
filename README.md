@@ -4,7 +4,6 @@
 [![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 ![platform](https://img.shields.io/badge/platform-Windows%207%20SP1%2B-0078D6)
 
-> 徽章与 `package.json` 里的仓库地址使用占位符 `OWNER/REPO`，发布前替换成你的 GitHub 账号与仓库名即可。
 
 一个用于在**大屏 / 展厅 / 现场**展示多项技术的 Windows 桌面软件。
 
