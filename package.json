@@ -24,11 +24,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/OWNER/REPO.git"
+    "url": "git+https://github.com/foragedysetour/TechDemoStudio.git"
   },
-  "homepage": "https://github.com/OWNER/REPO#readme",
+  "homepage": "https://github.com/foragedysetour/TechDemoStudio#readme",
   "bugs": {
-    "url": "https://github.com/OWNER/REPO/issues"
+    "url": "https://github.com/foragedysetour/TechDemoStudio/issues"
   },
   "scripts": {
     "start": "electron .",
