@@ -71,7 +71,7 @@ jobs:
         run: npm run icon
 
       - name: 构建 x64 + ia32 安装包
-        run: npm run dist --publish never
+        run: npm run dist -- --publish never
 
       - name: 列出版本信息与产物
         run: |
