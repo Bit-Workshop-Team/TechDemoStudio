@@ -313,8 +313,6 @@ details.prompt-editor .body { margin-top: 10px; }
 .board-card ul.highlights { margin: 0 0 13px; padding-left: 17px; color: var(--text-faint); font-size: 12.1px; }
 .board-card ul.highlights li { margin-bottom: 3px; }
 .board-card .board-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.board-card.planned { opacity: 0.86; }
-.board-card.planned:hover { border-color: rgba(232, 163, 61, 0.36); }
 
 .notes { font-size: 12.2px; color: var(--text-faint); line-height: 1.65; }
 .notes code {
@@ -351,7 +349,7 @@ details.prompt-editor .body { margin-top: 10px; }
    ========================================================================== */
 #view-demo { background: linear-gradient(180deg, #05070b, #0a0f16 60%, #05070b); }
 
-/* 顶部大标题（演示画面与占位板块共用） */
+/* 顶部大标题（演示画面） */
 .demo-headline {
   flex: none;
   padding: 16px 26px 12px;
@@ -637,27 +635,6 @@ details.prompt-editor .body { margin-top: 10px; }
 }
 .demo-error.show { display: block; }
 .demo-error .actions { margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap; }
-
-/* 占位板块 */
-.placeholder-wrap {
-  flex: 1 1 auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  gap: 18px;
-  text-align: center;
-  padding: 40px;
-}
-.placeholder-wrap .orb {
-  width: 148px; height: 148px; border-radius: 50%;
-  background: radial-gradient(circle at 34% 30%, rgba(216, 174, 98, 0.5), rgba(89, 165, 255, 0.16) 55%, transparent 72%);
-  border: 1px solid rgba(216, 174, 98, 0.3);
-  animation: pulse 3.4s infinite;
-}
-.placeholder-wrap h2 { margin: 0; font-size: 26px; letter-spacing: 0.1em; }
-.placeholder-wrap .sub { color: var(--text-dim); font-size: 14px; }
-.placeholder-wrap .tagline { color: var(--text-faint); font-size: 13px; max-width: 620px; line-height: 1.75; }
 
 /* Toast */
 #toast-host {

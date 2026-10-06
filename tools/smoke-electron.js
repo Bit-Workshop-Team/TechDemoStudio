@@ -146,7 +146,6 @@ const PHASE_A_SCRIPT = `(async () => {
   out.blackEffortOptions = Array.from(document.getElementById('black-effort').options).map(o => o.value).join(',');
   out.whiteEffortOptions = Array.from(document.getElementById('white-effort').options).map(o => o.value).join(',');
   out.headlineText = (document.querySelector('#view-demo .demo-headline h1') || {}).textContent;
-  out.blankHeadlineText = (document.querySelector('#view-blank .demo-headline h1') || {}).textContent;
   out.headlineCount = document.querySelectorAll('.demo-headline h1').length;
   out.headlineFontSize = parseFloat(getComputedStyle(document.querySelector('#view-demo .demo-headline h1')).fontSize) || 0;
 
@@ -354,12 +353,11 @@ const PHASE_A_SCRIPT = `(async () => {
   document.getElementById('btn-demo-manual').click();   // 交还，恢复正常演示
   await sleep(200);
 
-  // 占位板块视图
-  const blankRes = await window.DemoView.start('vision');
-  out.blankMode = blankRes && blankRes.mode;
-  out.blankActive = document.getElementById('view-blank').classList.contains('active');
-  out.blankTitle = document.getElementById('blank-title').textContent;
-  out.blankLockDots = document.querySelectorAll('#blank-lock-keys i').length;
+  // 只有五子棋一个板块：占位视图已删除，未知板块必须被拒绝
+  out.blankViewGone = document.getElementById('view-blank') === null;
+  const unknownRes = await window.DemoView.start('vision');
+  out.unknownBoardRejected = !!(unknownRes && unknownRes.ok === false);
+  out.backToSettingsAfterReject = document.getElementById('view-settings').classList.contains('active');
 
   return out;
 })()`;
@@ -742,8 +740,8 @@ app.whenReady().then(async () => {
     ['CSP 已配置且禁止远程连接', typeof a.cspMeta === 'string' && /connect-src 'none'/.test(a.cspMeta) && /script-src 'self'/.test(a.cspMeta)],
     ['CSP 实际拦截渲染层网络请求', /^connect-src/.test(String(a.cspViolation))],
     ['棋盘 15×15', a.rulesSize === 15],
-    ['5 个技术板块卡片', a.boardCards === 5],
-    ['板块按钮数量充足', a.boardButtons >= 5],
+    ['1 个技术板块卡片', a.boardCards === 1],
+    ['板块卡片按钮可用', a.boardButtons >= 1],
     ['设置可保存', a.saveState === '设置已同步'],
     ['API Key 回读一致', a.savedKey === 'sk-smoke-test-key'],
     ['白方引擎保存为 local', a.savedWhiteEngine === 'local'],
@@ -771,7 +769,7 @@ app.whenReady().then(async () => {
     ['本地引擎隐藏模型与档位', a.localFieldsHidden === true && a.localNoteShown === true],
     ['切回 API 恢复模型字段', a.apiFieldsShown === true && a.apiNoteHidden === true],
     ['下拉可展开并选中候选项', a.comboOpen === true && a.comboItems >= 2 && a.comboPickedMatches === true && a.comboClosedAfterPick === true],
-    ['顶部大标题正确且可见', a.headlineText === 'DeepSeek能否战胜机器？' && a.blankHeadlineText === 'DeepSeek能否战胜机器？' && a.headlineCount === 2 && a.headlineFontSize >= 24 && b.headlineVisibleInDemo === true],
+    ['顶部大标题正确且可见', a.headlineText === 'DeepSeek能否战胜机器？' && a.headlineCount === 1 && a.headlineFontSize >= 24 && b.headlineVisibleInDemo === true],
     ['旧模型名保存后被迁移', a.legacyModelMigrated === true],
     ['low 思考档位可保存', a.lowEffortSaved === true],
     ['手数区为横向滚动不换行', a.movesOverflowX === 'auto' && a.movesNoWrap === 'nowrap'],
@@ -782,8 +780,7 @@ app.whenReady().then(async () => {
     ['交还引擎后按钮与徽章还原', typeof a.manualLabelBack === 'string' && a.manualLabelBack.indexOf('我要挑战') >= 0 && !/人类棋手/.test(a.badgeRestored || '')],
     ['人落子后 AI 自动接续落子', a.humanTurnFirst === true && a.humanTurnReached === true && a.humanThenPlaceOk === true && a.humanThenAiMoves === true],
     ['AI 落子后回合自动交回人类', a.humanTurnAfterAi === true],
-    ['占位板块可进入', a.blankMode === 'blank' && a.blankActive === true],
-    ['占位页有暗码点', a.blankLockDots === 6],
+    ['占位视图已删除且未知板块被拒绝', a.blankViewGone === true && a.unknownBoardRejected === true && a.backToSettingsAfterReject === true],
     ['demo:start 成功进入锁定', b.startResult === true && b.lockedAfterStart === true],
     ['锁定后切到演示视图', b.viewActive === true],
     ['注册了系统快捷键封锁', b.lockInfo && b.lockInfo.blockedCount >= 30],

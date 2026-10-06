@@ -24,11 +24,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Bit-Workshop-Team/TechDemoStudio/TechDemoStudio.git"
+    "url": "git+https://github.com/Bit-Workshop-Team/TechDemoStudio.git"
   },
-  "homepage": "https://github.com/Bit-Workshop-Team/TechDemoStudio/TechDemoStudio#readme",
+  "homepage": "https://github.com/Bit-Workshop-Team/TechDemoStudio#readme",
   "bugs": {
-    "url": "https://github.com/Bit-Workshop-Team/TechDemoStudio/TechDemoStudio/issues"
+    "url": "https://github.com/Bit-Workshop-Team/TechDemoStudio/issues"
   },
   "scripts": {
     "start": "electron .",
