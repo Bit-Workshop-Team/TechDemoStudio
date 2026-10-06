@@ -12,7 +12,8 @@
 - 启动即进入**设置界面**：填 API Key、配置演示参数、选择要展示的技术板块；
 - 进入某个板块后**全屏锁定**并屏蔽大部分系统快捷键；
 - 退出全屏的唯一方式是**连续按指定暗码**；
-- 第一个板块是「**AI 五子棋 · 双 AI 对弈**」（参考 [dsh-gomoku](https://github.com/omdsh-dev/dsh-gomoku) 的规则与提示词设计），其余板块为占位页；
+- 目前包含一个板块：「**AI 五子棋 · 双 AI 对弈**」（参考 [dsh-gomoku](https://github.com/omdsh-dev/dsh-gomoku) 的规则与提示词设计），
+  设置界面的板块卡片就是从这里渲染的，新增板块见第 7 节；
 - **支持 Windows 7 SP1 及以上**，使用 Electron 22（最后一个官方支持 Win7 的版本）打包，交付 NSIS 安装包。
 
 ![演示界面：顶部大标题与实时比分、双 AI 对弈棋盘、左右思考过程、终局横幅与「我要挑战deepseek！」](docs/screenshots/demo.png)
@@ -60,9 +61,7 @@ npm start          # 或 npm run dev（带开发模式标记）
    - 模型：自绘暗色下拉，预置 `deepseek-flash`（V4.1-Flash · 快，支持思考）与 `deepseek-v4-pro`（V4-Pro · 推理更强），也可手填任意模型名；
    - 思考档位：**Off / Low / High / Max** 四档；
    - 系统提示词：可展开编辑，也可一键恢复默认；
-4. 在「技术演示板块」中点击卡片上的「进入演示」即进入**全屏演示**；
-   - 「AI 五子棋 · 双 AI 对弈」状态为「可演示」；
-   - 其余卡片为「待开发」，进入后是占位页，同样用 `114514` 退出；
+4. 在「技术演示板块」中点击「AI 五子棋 · 双 AI 对弈」卡片上的「进入演示模式」即进入**全屏演示**；
 5. 演示画面上方是金色大标题 **「DeepSeek能否战胜机器？」**，标题正下方是一条实时比分：
    `● 黑方 0 : ● 白方 0  和棋 0`，每局终了自动累加，进入演示模式时归零；
    棋盘左右两侧实时流式展示双方的思考过程；
@@ -158,18 +157,22 @@ npm start          # 或 npm run dev（带开发模式标记）
 
 ## 7. 新增一个技术板块
 
-1. 编辑 `src/shared/boards.js`，在 `list()` 里加一项：
+目前软件里只有「AI 五子棋」一个板块，**没有占位页**：板块目录里没有、或视图未实现的 id 会被
+`DemoView.start()` 直接拒绝并提示「未知板块」，不会切到一个空页面。要新增板块：
+
+1. 编辑 `src/shared/boards.js`，在 `BOARDS` 数组里加一项（设置界面右侧的卡片就是按这里的顺序渲染的）：
 
 ```js
-{ id: 'myboard', name: '我的板块', en: 'MY BOARD', status: 'ready', order: 6,
-  tagline: '一句话说明', highlights: ['要点一', '要点二'] }
+{ id: 'myboard', name: '我的板块', subtitle: 'MY BOARD', tag: '标签',
+  status: 'ready', order: 2,
+  summary: '一句话说明', highlights: ['要点一', '要点二'] }
 ```
 
 2. 在 `src/renderer/index.html` 里加一个 `<section class="view" id="view-myboard">`，
-   或在 `src/renderer/lib/demo.js` 的视图切换里挂上自己的渲染逻辑；
+   在 `src/renderer/lib/demo.js` 的 `showView()` 里登记这个视图 id，并实现自己的演示逻辑；
 3. 需要主进程能力（网络、文件、系统 API）就在 `src/main/main.js` 注册新的 IPC，并在 `src/preload/preload.js` 暴露。
 
-`status: 'planned'` 的板块会自动渲染成带锁的占位页，点击照样进全屏演示，用 `114514` 退出。
+全屏锁定与退出暗码由主进程统一负责，新板块不需要自己实现锁屏。
 
 ---
 
@@ -186,7 +189,7 @@ src/
     kiosk.js           全屏锁定、系统快捷键屏蔽、暗码校验与进度回调
   preload/preload.js    contextBridge 暴露的 window.demoAPI（llm / config / gomoku / demo / lock）
   renderer/
-    index.html          设置界面 + 演示界面 + 占位板块页
+    index.html          设置界面 + 演示界面
     app.js              渲染层入口与视图切换
     styles.css          全部样式（深色玻璃拟态主题）
     lib/settings.js     设置界面表单、自绘模型下拉、引擎切换、保存回读
@@ -196,11 +199,11 @@ src/
     lib/ui.js           toast / 对话框 / 小工具
   shared/             主进程与渲染层共用（UMD）
     gomoku-rules.js     15×15 规则、棋盘文本、五连检测
-    boards.js           技术板块清单
+    boards.js           技术板块清单（当前只有 gomoku）
     default-prompts.js  默认系统提示词与 user message 构造
 tools/
   self-test.js        71 项纯逻辑自检（node tools/self-test.js）
-  smoke-electron.js   82 项端到端冒烟（真实 Electron + 真实 IPC + 真实 Kiosk + 截图）
+  smoke-electron.js   81 项端到端冒烟（真实 Electron + 真实 IPC + 真实 Kiosk + 截图）
   make-icon.js        按 electron-builder 要求生成 icon.png / icon.ico
 build/                installer.nsh（Win7 版本校验）；icon.ico / icon.png 由 npm run icon 生成（不入库）
 docs/screenshots/     README 配图（设置界面、演示界面）
@@ -223,7 +226,7 @@ npm install                # 安装依赖（electron 22.3.27 + electron-builder 
 npm start                  # 运行
 npm run dev                # 运行（开发模式标记，界面右上角显示版本与「开发模式」）
 npm test                   # 71 项纯逻辑自检
-npm run test:e2e           # 82 项 Electron 端到端（真实 IPC + 真实 Kiosk + 暗码退出），并截取 shots/ 界面截图
+npm run test:e2e           # 81 项 Electron 端到端（真实 IPC + 真实 Kiosk + 暗码退出），并截取 shots/ 界面截图
 npm run icon               # 重新生成图标
 npm run dist               # 打包 NSIS：x64 + ia32 + 二合一（产出在 dist/）
 npm run dist:x64           # 只打 x64
@@ -261,7 +264,7 @@ CI 与 CD 拆成两个工作流，各自独立、互不牵连：
 
 ```bat
 npm ci && npm test                # CI 等价命令（71 项）
-npm run test:e2e                  # 本地 82 项端到端（含截图）
+npm run test:e2e                  # 本地 81 项端到端（含截图）
 npm run icon && npm run dist      # 本地出安装包（不依赖 CI 也能发版）
 ```
 
@@ -285,7 +288,7 @@ git push origin v1.0.0
 | 验证 | 结果 |
 | --- | --- |
 | `node tools/self-test.js` | **71 / 71 通过**（规则、棋盘文本、默认提示词、**非法落子六种拒绝原因各自带针对性纠正提示、重试消息含纠正提示与空点示例、合法落子/和棋仍放行**、请求体构造 `thinking`/`reasoning_effort`、旧模型名迁移、思考档位白名单、退出口令的输错重置与双通道去重、本地引擎三档合法性与耗时、四连必成五、对手四连必封堵、黑 L3 vs 白 L2 自对弈到分胜负） |
-| `npm run test:e2e`（源码） | **82 / 82 通过**：设置渲染与保存回读、**CSP 已配置且真实拦截渲染层网络请求（`connect-src` 违规事件）**、旧模型名保存后迁移为 `deepseek-flash`、`low` 档位可保存、自绘模型下拉可展开/筛选/选中、本地引擎时模型与档位隐藏、顶部大标题文本与尺寸、**标题下方实时比分（进入演示归零 / 一局结束累加 / 再来一局保留 / 第二局继续累加 / 悔掉已计分对局回退）**、「我要挑战deepseek！」按钮在棋盘下方且已放大、人机对战接管与交还、**人落子后 AI 自动接续落子、AI 落子后回合自动交回人类**、人工点击棋盘落子、思考面板流式输出、终局横幅弹出且标题/说明/按钮不重叠不被裁切、**终局横幅显示 10 秒自动续场倒计时且到点自动开下一局（不重复计分）、暂停会取消倒计时**、「再来一局」可重开新局、**手数条横向滚动条的 8 px 净空（不压住落子标签）**且底栏高度稳定、暗码进度点、输错暗码的红色抖动/红点/文案/toast 及恢复、Kiosk 进入与两轮退出、双通道投递去重、人手连按不丢键 |
+| `npm run test:e2e`（源码） | **81 / 81 通过**：设置渲染与保存回读、**技术板块卡片只有「AI 五子棋」一个且占位视图已删除（未知板块被拒绝、停留在设置界面）**、**CSP 已配置且真实拦截渲染层网络请求（`connect-src` 违规事件）**、旧模型名保存后迁移为 `deepseek-flash`、`low` 档位可保存、自绘模型下拉可展开/筛选/选中、本地引擎时模型与档位隐藏、顶部大标题文本与尺寸、**标题下方实时比分（进入演示归零 / 一局结束累加 / 再来一局保留 / 第二局继续累加 / 悔掉已计分对局回退）**、「我要挑战deepseek！」按钮在棋盘下方且已放大、人机对战接管与交还、**人落子后 AI 自动接续落子、AI 落子后回合自动交回人类**、人工点击棋盘落子、思考面板流式输出、终局横幅弹出且标题/说明/按钮不重叠不被裁切、**终局横幅显示 10 秒自动续场倒计时且到点自动开下一局（不重复计分）、暂停会取消倒计时**、「再来一局」可重开新局、**手数条横向滚动条的 8 px 净空（不压住落子标签）**且底栏高度稳定、暗码进度点、输错暗码的红色抖动/红点/文案/toast 及恢复、Kiosk 进入与两轮退出、双通道投递去重、人手连按不丢键 |
 | Kiosk 端到端 | 进入后 `locked=true`、成功注册 31 个全局快捷键；真实按键模拟：错误暗码 `114513` 不退出、正确暗码 `114514` 退出并回到设置界面、可重复进入退出 |
 | 界面截图取证 | 端到端测试自动截取 `shots/01-settings.png`、`01b-model-combo.png`、`02-demo-headline.png`、`03-wrong-code.png`、`04-banner-win.png`（可用于回归对比） |
 | 打包后复测 | `SMOKE_APP_ROOT=dist/win-unpacked/resources/app.asar/src` 再跑一次端到端，同样全部通过（证明 asar 内的应用本体可用） |

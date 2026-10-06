@@ -7,7 +7,7 @@
 
   var state = {
     active: false,
-    mode: null,          // 'gomoku' | 'blank'
+    mode: null,          // 目前只有 'gomoku'
     paused: false,
     humanSide: null,     // 人机对战时由人接管的一方（R.BLACK / R.WHITE），null = 双 AI
     humanBackup: null,   // 接管前的引擎类型，交还时还原
@@ -51,7 +51,7 @@
 
   // ------------------------------------------------------------------ 视图切换
   function showView(name) {
-    ['view-settings', 'view-demo', 'view-blank'].forEach(function (id) {
+    ['view-settings', 'view-demo'].forEach(function (id) {
       var node = $(id);
       if (node) node.classList.toggle('active', id === 'view-' + name);
     });
@@ -684,24 +684,18 @@
   function setupLockHint(length, show) {
     var total = length || 6;
     state.showLockHint = show !== false;
-    [el.lockKeys, el.blankLockKeys].forEach(function (host) {
-      if (!host) return;
-      UI.clear(host);
-      for (var i = 0; i < total; i++) host.appendChild(UI.el('i'));
-    });
+    UI.clear(el.lockKeys);
+    for (var i = 0; i < total; i++) el.lockKeys.appendChild(UI.el('i'));
     el.lockBadge.style.display = '';
     el.lockKeys.style.display = show === false ? 'none' : '';
     el.lockText.textContent = show === false ? '演示锁定中' : '演示锁定中 · 连续输入暗码退出';
   }
 
   function updateKeyProgress(length) {
-    [el.lockKeys, el.blankLockKeys].forEach(function (host) {
-      if (!host) return;
-      var dots = host.querySelectorAll('i');
-      for (var i = 0; i < dots.length; i++) {
-        dots[i].className = i < length ? 'on' : '';
-      }
-    });
+    var dots = el.lockKeys.querySelectorAll('i');
+    for (var i = 0; i < dots.length; i++) {
+      dots[i].className = i < length ? 'on' : '';
+    }
   }
 
   var wrongTimer = null;
@@ -709,17 +703,12 @@
 
   /** 暗码输错时的反馈：抖动 + 红点 + 文案 + toast，若配置了隐藏按键提示也不泄露暗码内容 */
   function flashWrongCode() {
-    var badges = [el.lockBadge, el.blankLockKeys && el.blankLockKeys.parentElement].filter(Boolean);
-    badges.forEach(function (badge) {
-      badge.classList.remove('wrong');
-      void badge.offsetWidth;      // 触发重排以便重放动画
-      badge.classList.add('wrong');
-    });
-    [el.lockKeys, el.blankLockKeys].forEach(function (host) {
-      if (!host) return;
-      var dots = host.querySelectorAll('i');
-      for (var i = 0; i < dots.length; i++) dots[i].className = 'bad';
-    });
+    var badge = el.lockBadge;
+    badge.classList.remove('wrong');
+    void badge.offsetWidth;      // 触发重排以便重放动画
+    badge.classList.add('wrong');
+    var dots = el.lockKeys.querySelectorAll('i');
+    for (var i = 0; i < dots.length; i++) dots[i].className = 'bad';
     if (el.lockText) el.lockText.textContent = '暗码错误 · 已重置，请重新输入';
     if (Date.now() - lastWrongToastAt > 2200) {
       lastWrongToastAt = Date.now();
@@ -727,7 +716,7 @@
     }
     clearTimeout(wrongTimer);
     wrongTimer = setTimeout(function () {
-      badges.forEach(function (badge) { badge.classList.remove('wrong'); });
+      badge.classList.remove('wrong');
       if (el.lockText) {
         el.lockText.textContent = state.showLockHint === false ? '演示锁定中' : '演示锁定中 · 连续输入暗码退出';
       }
@@ -766,15 +755,12 @@
 
       var board = (info && info.boards || []).filter(function (b) { return b.id === boardId; })[0];
 
+      // 目前只实现了 gomoku 一个板块；目录里没有的 id 一律拒绝，不再有占位页
       if (boardId !== 'gomoku') {
-        state.mode = 'blank';
-        showView('blank');
-        el.blankTitle.textContent = (board && board.name) || '板块建设中';
-        el.blankSub.textContent = '该技术板块尚未接入演示内容';
-        el.blankTagline.textContent = (board && board.summary) || '板块内容待补充。演示锁定机制已在全屏下生效：输入退出暗码即可返回设置界面。';
-        el.blankLockIcon.innerHTML = UI.ICONS.lock;
-        setInteractive(false);
-        return { ok: true, mode: 'blank' };
+        state.active = false;
+        showView('settings');
+        UI.toast('未知板块：' + boardId + '（当前只实现了 AI 五子棋）', 'error', 4200);
+        return { ok: false, error: '未知板块：' + boardId };
       }
 
       state.mode = 'gomoku';
@@ -851,16 +837,10 @@
       paceLabel: $('demo-pace-label'),
       lockBadge: $('lock-badge'),
       lockText: $('lock-text'),
-      lockKeys: $('lock-keys'),
-      blankTitle: $('blank-title'),
-      blankSub: $('blank-sub'),
-      blankTagline: $('blank-tagline'),
-      blankLockIcon: $('blank-lock-icon'),
-      blankLockKeys: $('blank-lock-keys')
+      lockKeys: $('lock-keys')
     };
 
     $('lock-icon').innerHTML = UI.ICONS.lock;
-    el.blankLockIcon.innerHTML = UI.ICONS.lock;
     setupPanels();
 
     game = window.GomokuGame.create();

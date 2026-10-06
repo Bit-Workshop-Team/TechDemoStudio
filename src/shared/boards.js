@@ -1,6 +1,9 @@
 /**
- * 技术板块目录。除 gomoku 外的板块目前留空（status: planned），
- * 进入后展示"待开发"占位演示页，用于验证板块框架。
+ * 技术板块目录。设置界面右侧的板块卡片就是按这里的顺序渲染的。
+ *
+ * 目前只有一个板块（gomoku）。要新增板块：在这里追加一项，并把 status 设为 'ready'，
+ * 同时在 src/renderer 里实现对应的演示视图（见 README 第 7 节）。
+ * 未知 id 会被 DemoView.start() 拒绝，因此这里列出的必须是真正实现过的板块。
  */
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) {
@@ -26,46 +29,6 @@
         '非法落子由服务端拒绝并要求模型重选',
         '无 API Key 时可切到内置本地引擎，离线也能演示'
       ]
-    },
-    {
-      id: 'vision',
-      name: '视觉识别与实时追踪',
-      subtitle: 'Realtime Vision',
-      tag: '计算机视觉',
-      status: 'planned',
-      order: 2,
-      summary: '摄像头/视频流的实时目标检测与追踪演示。',
-      highlights: ['板块内容待补充']
-    },
-    {
-      id: 'speech',
-      name: '实时语音合成与克隆',
-      subtitle: 'Realtime TTS',
-      tag: '语音技术',
-      status: 'planned',
-      order: 3,
-      summary: '文本到语音的实时流式合成与音色克隆演示。',
-      highlights: ['板块内容待补充']
-    },
-    {
-      id: 'agent',
-      name: '多智能体协作编排',
-      subtitle: 'Multi-Agent Orchestration',
-      tag: 'Agent',
-      status: 'planned',
-      order: 4,
-      summary: '多个 Agent 分工协作完成复杂任务的编排演示。',
-      highlights: ['板块内容待补充']
-    },
-    {
-      id: 'rag',
-      name: '知识库检索增强（RAG）',
-      subtitle: 'Retrieval Augmented Generation',
-      tag: '检索增强',
-      status: 'planned',
-      order: 5,
-      summary: '文档向量化、检索与溯源的端到端演示。',
-      highlights: ['板块内容待补充']
     }
   ];
 

@@ -282,17 +282,13 @@
     var list = (state.info && state.info.boards) || boards.list();
     var lastBoard = (state.info && state.info.defaultBoardId) || 'gomoku';
     list.forEach(function (board) {
-      var ready = board.status === 'ready';
-      var card = UI.el('div', { class: 'board-card' + (ready ? '' : ' planned') }, [
+      var card = UI.el('div', { class: 'board-card' }, [
         UI.el('div', { class: 'board-top' }, [
           UI.el('div', {}, [
             UI.el('div', { class: 'board-name', text: board.name }),
             UI.el('div', { class: 'board-sub', text: (board.subtitle || board.id) })
           ]),
-          UI.el('span', {
-            class: 'badge ' + (ready ? 'badge-ready' : 'badge-planned'),
-            text: ready ? '可演示' : '待开发'
-          })
+          UI.el('span', { class: 'badge badge-ready', text: '可演示' })
         ]),
         UI.el('div', { class: 'board-summary', text: board.summary || '' }),
         UI.el('ul', { class: 'highlights' }, (board.highlights || []).map(function (h) {
@@ -300,16 +296,11 @@
         })),
         UI.el('div', { class: 'board-actions' }, [
           UI.el('button', {
-            class: 'btn ' + (ready ? 'btn-primary' : 'btn-ghost'),
+            class: 'btn btn-primary',
             type: 'button',
-            onclick: function () {
-              if (!ready) {
-                UI.toast('「' + board.name + '」演示内容待补充，将进入占位页面（锁定机制同样生效）', 'info', 4200);
-              }
-              enterDemo(board.id);
-            }
-          }, [UI.icon(ready ? 'play' : 'lock'), UI.el('span', { text: ready ? '进入演示模式' : '进入占位页面' })]),
-          ready && lastBoard === board.id ? UI.el('span', { class: 'badge', text: '上次使用' }) : null
+            onclick: function () { enterDemo(board.id); }
+          }, [UI.icon('play'), UI.el('span', { text: '进入演示模式' })]),
+          lastBoard === board.id ? UI.el('span', { class: 'badge', text: '上次使用' }) : null
         ])
       ]);
       host.appendChild(card);
@@ -318,9 +309,8 @@
 
   function enterDemo(boardId) {
     var status = collect();
-    // 只有真正会调用大模型的板块才强制要求 API Key（其余板块为占位页）
-    var usesApi = boardId === 'gomoku';
-    var needApi = usesApi && (status.black.engine === 'api' || status.white.engine === 'api');
+    // 会调用大模型的板块必须先有 API Key（否则让该方改用内置本地引擎）
+    var needApi = status.black.engine === 'api' || status.white.engine === 'api';
     if (needApi && !status.api.apiKey) {
       UI.toast('当前有对弈方使用「大模型 API」，请先填写 API Key；或把该方改为「内置本地引擎」。', 'error', 5200);
       return;
