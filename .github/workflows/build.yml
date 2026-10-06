@@ -104,7 +104,7 @@ jobs:
     permissions:
       contents: write        # 创建 Release 需要写权限
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: TechDemoStudio-installers
           path: installers
