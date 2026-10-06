@@ -1,8 +1,8 @@
 # 技术演示台 · TechDemoStudio
 
-[![test](https://github.com/Bit-Workshop-Team/TechDemoStudio/TechDemoStudio/actions/workflows/test.yml/badge.svg)](https://github.com/Bit-Workshop-Team/TechDemoStudio/TechDemoStudio/actions/workflows/test.yml)
-[![build](https://github.com/Bit-Workshop-Team/TechDemoStudio/TechDemoStudio/actions/workflows/build.yml/badge.svg)](https://github.com/Bit-Workshop-Team/TechDemoStudio/TechDemoStudio/actions/workflows/build.yml)
-[![release](https://img.shields.io/github/v/release/foragedysetour/TechDemoStudio?label=release)](https://github.com/Bit-Workshop-Team/TechDemoStudio/TechDemoStudio/releases)
+[![test](https://github.com/Bit-Workshop-Team/TechDemoStudio/actions/workflows/test.yml/badge.svg)](https://github.com/Bit-Workshop-Team/TechDemoStudio/actions/workflows/test.yml)
+[![build](https://github.com/Bit-Workshop-Team/TechDemoStudio/actions/workflows/build.yml/badge.svg)](https://github.com/Bit-Workshop-Team/TechDemoStudio/actions/workflows/build.yml)
+[![release](https://img.shields.io/github/v/release/Bit-Workshop-Team/TechDemoStudio?label=release)](https://github.com/Bit-Workshop-Team/TechDemoStudio/releases)
 [![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 ![platform](https://img.shields.io/badge/platform-Windows%207%20SP1%2B-0078D6)
 
@@ -321,7 +321,7 @@ git push origin v1.0.0
 ```bat
 git add -A
 git commit -m "feat: TechDemoStudio 1.0.0（多技术板块演示台 + AI 五子棋板块）"
-git remote add origin https://github.com/Bit-Workshop-Team/TechDemoStudio/TechDemoStudio.git
+git remote add origin https://github.com/Bit-Workshop-Team/TechDemoStudio.git
 git push -u origin main
 ```
 
