@@ -75,7 +75,7 @@ jobs:
           Get-ChildItem dist\*.exe | Select-Object Name, @{n='MB';e={[math]::Round($_.Length/1MB,1)}}
 
       - name: 上传安装包
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: TechDemoStudio-installers
           if-no-files-found: error
@@ -85,7 +85,7 @@ jobs:
             dist/*.blockmap
 
       - name: 上传应用本体（便于排查，不含 Electron 运行时）
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: TechDemoStudio-win-unpacked-app
           if-no-files-found: warn
