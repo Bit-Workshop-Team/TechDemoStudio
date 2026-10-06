@@ -24,11 +24,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/foragedysetour/TechDemoStudio.git"
+    "url": "git+https://github.com/Bit-Workshop-Team/TechDemoStudio/TechDemoStudio.git"
   },
-  "homepage": "https://github.com/foragedysetour/TechDemoStudio#readme",
+  "homepage": "https://github.com/Bit-Workshop-Team/TechDemoStudio/TechDemoStudio#readme",
   "bugs": {
-    "url": "https://github.com/foragedysetour/TechDemoStudio/issues"
+    "url": "https://github.com/Bit-Workshop-Team/TechDemoStudio/TechDemoStudio/issues"
   },
   "scripts": {
     "start": "electron .",

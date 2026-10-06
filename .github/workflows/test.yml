@@ -1,0 +1,37 @@
+name: test
+
+# CI：只跑逻辑自检。快（几十秒）、稳、不依赖网络与 GUI。
+# 构建安装包与自动发版见 build.yml；端到端冒烟在本地跑（npm run test:e2e）。
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# 同一分支只保留最新一次运行
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: 逻辑自检 (node tools/self-test.js)
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: 安装依赖
+        run: npm ci
+
+      - name: 规则 / 棋盘文本 / 提示词 / 请求体 / 配置 / 暗码 自检
+        run: npm test

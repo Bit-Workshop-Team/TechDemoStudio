@@ -1,34 +1,30 @@
 name: build
 
-# 触发方式：
-#   - 推送到 main / 向 main 发 PR：跑逻辑自检 + 构建安装包
-#   - 打 v* 标签：额外跑端到端冒烟，并把安装包附到 GitHub Release
-#   - 手动触发：可自由选择是否只跑测试
+# CD：构建 Windows 安装包，并在打 v* 标签时自动发版。
+# 日常提交的逻辑验证由 test.yml 负责；这里在构建前再自检一遍，避免用坏代码出包。
+# 触发：打 tag（发版）、手动触发。想验证提交请用 test.yml。
 on:
   push:
-    branches: [main]
     tags: ['v*']
-  pull_request:
-    branches: [main]
   workflow_dispatch:
 
-# 同一分支只保留最新一次运行，避免排队堆积
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 permissions:
   contents: read
 
 env:
-  # electron-builder 在 CI 里不需要发布到任何商店，产物交给 artifact / Release
+  # CI 上不发布到任何商店，产物交给 artifact / Release
   CSC_IDENTITY_AUTO_DISCOVERY: 'false'
 
 jobs:
-  test:
+  # 构建前的把关：不通过就不出包
+  verify:
     name: 逻辑自检 (node tools/self-test.js)
     runs-on: windows-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
@@ -40,12 +36,12 @@ jobs:
       - name: 安装依赖
         run: npm ci
 
-      - name: 规则 / 提示词 / 配置 / 暗码 自检
+      - name: 规则 / 棋盘文本 / 提示词 / 请求体 / 配置 / 暗码 自检
         run: npm test
 
   build:
     name: 构建 Windows 安装包 (NSIS)
-    needs: test
+    needs: verify
     runs-on: windows-latest
     timeout-minutes: 45
     steps:
@@ -71,7 +67,7 @@ jobs:
         run: npm run icon
 
       - name: 构建 x64 + ia32 安装包
-        run: npm run dist -- --publish never
+        run: npm run dist
 
       - name: 列出版本信息与产物
         run: |
@@ -88,7 +84,7 @@ jobs:
             dist/TechDemoStudio-*-setup.exe
             dist/*.blockmap
 
-      - name: 上传免安装目录内容（便于排查，不含 Electron 运行时）
+      - name: 上传应用本体（便于排查，不含 Electron 运行时）
         uses: actions/upload-artifact@v4
         with:
           name: TechDemoStudio-win-unpacked-app
@@ -98,42 +94,6 @@ jobs:
             dist/win-unpacked/TechDemoStudio.exe
             dist/win-unpacked/resources/app.asar
             dist/win-unpacked/resources/app.asar.unpacked/**
-
-  # 端到端冒烟需要真实窗口（Electron 起 GUI），只手动触发和打标签时跑，避免日常 PR 被环境抖动拖红
-  e2e:
-    name: 端到端冒烟 (真实 Electron + Kiosk + 暗码退出)
-    needs: test
-    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
-    runs-on: windows-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-
-      - name: 安装依赖
-        run: npm ci
-
-      - name: 生成图标
-        run: npm run icon
-
-      - name: 源码端到端
-        run: npm run test:e2e:sandboxed
-
-      - name: 上传冒烟结果与截图
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: smoke-evidence
-          if-no-files-found: warn
-          retention-days: 14
-          path: |
-            smoke-result.json
-            smoke-trace.log
-            shots/
 
   release:
     name: 发布 GitHub Release
@@ -154,7 +114,7 @@ jobs:
         run: |
           cd installers
           ls -l
-          sha256sum ./*.exe > SHA256SUMS.txt || true
+          sha256sum ./*.exe > SHA256SUMS.txt
           cat SHA256SUMS.txt
 
       - name: 创建 Release 并附加安装包

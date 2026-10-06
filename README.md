@@ -1,6 +1,8 @@
 # 技术演示台 · TechDemoStudio
 
-[![release](https://img.shields.io/github/v/release/foragedysetour/TechDemoStudio?label=release)](https://github.com/foragedysetour/TechDemoStudio/releases)
+[![test](https://github.com/Bit-Workshop-Team/TechDemoStudio/TechDemoStudio/actions/workflows/test.yml/badge.svg)](https://github.com/Bit-Workshop-Team/TechDemoStudio/TechDemoStudio/actions/workflows/test.yml)
+[![build](https://github.com/Bit-Workshop-Team/TechDemoStudio/TechDemoStudio/actions/workflows/build.yml/badge.svg)](https://github.com/Bit-Workshop-Team/TechDemoStudio/TechDemoStudio/actions/workflows/build.yml)
+[![release](https://img.shields.io/github/v/release/foragedysetour/TechDemoStudio?label=release)](https://github.com/Bit-Workshop-Team/TechDemoStudio/TechDemoStudio/releases)
 [![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 ![platform](https://img.shields.io/badge/platform-Windows%207%20SP1%2B-0078D6)
 
@@ -203,7 +205,8 @@ tools/
 build/                installer.nsh（Win7 版本校验）；icon.ico / icon.png 由 npm run icon 生成（不入库）
 docs/screenshots/     README 配图（设置界面、演示界面）
 .github/
-  workflows/build.yml 持续集成：测试 → 双架构打包 → 端到端 → 打 tag 自动发 Release
+  workflows/test.yml   CI：只跑逻辑自检（npm ci + npm test），push / PR 时触发
+  workflows/build.yml  CD：构建双架构安装包，打 tag 时自动发 draft Release
   dependabot.yml      依赖更新（electron 的 semver-major 被忽略，以保住 Win7 兼容）
 electron-builder.yml  打包配置（NSIS、x64+ia32、asar）
 LICENSE               MIT
@@ -235,29 +238,43 @@ set SMOKE_APP_ROOT=dist\win-unpacked\resources\app.asar\src
 npm run test:e2e
 ```
 
-### 9.1 持续集成（GitHub Actions）
+### 9.1 持续集成与自动发版（GitHub Actions）
 
-`.github/workflows/build.yml` 在 **push 到 main / PR / 打 tag / 手动触发**时运行：
+CI 与 CD 拆成两个工作流，各自独立、互不牵连：
 
-| Job | 触发条件 | 内容 |
-| --- | --- | --- |
-| `test` | push、PR、tag、手动 | `npm ci` + `npm test`（71 项纯逻辑自检） |
-| `build` | 依赖 `test` 通过 | Windows 上 `npm run icon` + `npm run dist`，上传 3 个安装包与 `win-unpacked` 应用目录为 artifact（缓存 Electron 与 electron-builder 下载目录） |
-| `e2e` | 仅手动触发或打 tag | `npm run test:e2e:sandboxed`（截图 + 真实 Kiosk），无论成败都上传冒烟日志与截图证据 |
-| `release` | 仅 tag `v*` | 下载安装包 → 生成 `SHA256SUMS.txt` → 用 `softprops/action-gh-release` 创建 **draft Release** |
+**`.github/workflows/test.yml`（CI，push / PR / 手动）**
 
-发布一个版本：
+| Job | 内容 |
+| --- | --- |
+| `test` | `npm ci` + `npm test`（71 项纯逻辑自检，几十秒） |
+
+**`.github/workflows/build.yml`（CD，打 `v*` 标签 / 手动）**
+
+| Job | 内容 |
+| --- | --- |
+| `verify` | 出包前再自检一遍（同上 `npm ci` + `npm test`），不通过就不出包 |
+| `build` | Windows 上 `npm run icon` + `npm run dist`，上传 3 个安装包与 `win-unpacked` 应用本体为 artifact（缓存 Electron / electron-builder 下载目录） |
+| `release` | 下载安装包 → 生成 `SHA256SUMS.txt` → 用 `softprops/action-gh-release` 创建 **draft Release** |
+
+这样每次提交只跑几十秒的逻辑自检，而出包/发版这类重活只在需要时执行。
+**端到端冒烟不进 CI**（需要真实 GUI 窗口），在本地跑：
+
+```bat
+npm ci && npm test                # CI 等价命令（71 项）
+npm run test:e2e                  # 本地 82 项端到端（含截图）
+npm run icon && npm run dist      # 本地出安装包（不依赖 CI 也能发版）
+```
+
+发布一个版本（打 tag 即自动构建并生成 Release 草稿）：
 
 ```bat
 git tag v1.0.0
 git push origin v1.0.0
 ```
 
-跑完后到仓库的 Releases 页面确认草稿内容再点发布。CI 里等价于：
-
-```bat
-npm ci && npm test && npm run dist && npm run test:e2e:sandboxed
-```
+跑完后到仓库的 Releases 页面确认草稿内容再点发布；想手工发版就用上面的本地打包命令，
+并把 `Get-FileHash dist\TechDemoStudio-*.exe -Algorithm SHA256` 的结果一并贴进 Release 说明
+（`SECURITY.md` 建议使用者用校验和核对安装包）。
 
 依赖更新由 Dependabot 每周提 PR（`electron` 的 semver-major 被刻意忽略，见 `SECURITY.md` 第 1 条）。
 
@@ -304,11 +321,11 @@ npm ci && npm test && npm run dist && npm run test:e2e:sandboxed
 ```bat
 git add -A
 git commit -m "feat: TechDemoStudio 1.0.0（多技术板块演示台 + AI 五子棋板块）"
-git remote add origin https://github.com/OWNER/REPO.git
+git remote add origin https://github.com/Bit-Workshop-Team/TechDemoStudio/TechDemoStudio.git
 git push -u origin main
 ```
 
-推送后 Actions 会自动跑测试与打包；打 `v1.0.0` 标签即触发 Release 草稿。
+推送后 Actions 会自动跑逻辑自检（`test.yml`）；之后打 `v1.0.0` 标签由 `build.yml` 自动构建并生成 Release 草稿。
 
 欢迎 Issue / PR。提交前请确保 `npm test` 全绿；改动渲染层或主进程时请附一次 `npm run test:e2e` 的结果，
 新增板块请按第 7 节的方式在 `src/shared/boards.js` 中登记。
